@@ -2,4 +2,64 @@
 title: "Analyzing NBA Recruits"
 author: "Ethan Katz"
 format: html
+execute:
+  echo: false
 ---
+
+```{r}
+#| message: false
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+#| cache: true
+basketball_tibble <- read_excel("data/nba_recruits.xlsx") |>
+  mutate(
+    tier = factor(
+      tier,
+      levels = c("Never played", "Brief career", "Solid career", "All-Star level", "Superstar"),
+      ordered = TRUE
+    ),
+    recruit_group = factor(
+      recruit_group,
+      levels = c("#1–10", "#11–25", "#26–50", "#51–100", "Outside top 100"),
+      ordered = TRUE
+    )
+  )
+```
+
+```{r}
+glimpse(read_excel("data/nba_recruits.xlsx"))
+```
+
+```{r}
+read_excel("data/nba_recruits.xlsx") |>
+  select(rank, nba_mean_ws48, top_mean_wa, total_seasons, drafted) |>
+  summary()
+```
+
+```{r}
+#| message: false
+library(ggrepel)
+
+basketball_tibble |>
+  filter(!is.na(rank), !is.na(top_mean_wa)) |>
+  ggplot(aes(x = rank, y = top_mean_wa, color = tier)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
+  geom_text_repel(
+    data = basketball_tibble |>
+      filter(!is.na(rank), !is.na(top_mean_wa)) |>
+      filter(name %in% c("LeBron James", "Chris Paul", "Kevin Durant", "Dwight Howard")),
+    aes(label = name),
+    show.legend = FALSE
+  ) +
+  labs(
+    title = "Peak Wins Added vs. High School Recruit Rank",
+    x = "Recruit Rank",
+    y = "Peak Wins Added",
+    color = "Career Tier"
+  ) +
+  theme_minimal()
+```
